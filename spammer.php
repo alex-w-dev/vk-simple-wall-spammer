@@ -102,7 +102,6 @@ if (isset($_POST['start_spam'])) {
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 </head>
 <body>
-<?php echo $access_token ?>
 <a href="/">Go back!</a>
 <hr>
 <hr>
