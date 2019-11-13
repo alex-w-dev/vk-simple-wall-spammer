@@ -1,16 +1,17 @@
 <?php
-// to get access token follow link
-// https://oauth.vk.com/authorize?client_id=2890984&scope=notify%2Cphotos%2Cfriends%2Caudio%2Cvideo%2Cnotes%2Cpages%2Cdocs%2Cstatus%2Cquestions%2Coffers%2Cwall%2Cgroups%2Cmessages%2Cnotifications%2Cstats%2Cads%2Coffline&redirect_uri=http://api.vk.com/blank.html&display=page&response_type=token
-// after that change this file and change $access_token (must be this:
-// $access_token = '5945667da41fa779dafa7480472814dee4f1ff390c677cd22e78ablahblahblahblahblahblahblahblah';
-//)
+include_once './access_tokens.php';
+
 $access_token = '';
+if (isset($_GET['access_index'])) {
+  $access_token = $access_tokens[$_GET['access_index']];
+}
 
 if (!$access_token) {
   echo 'Follow link<br>';
   echo '<a href="https://oauth.vk.com/authorize?client_id=2890984&scope=notify%2Cphotos%2Cfriends%2Caudio%2Cvideo%2Cnotes%2Cpages%2Cdocs%2Cstatus%2Cquestions%2Coffers%2Cwall%2Cgroups%2Cmessages%2Cnotifications%2Cstats%2Cads%2Coffline&redirect_uri=http://api.vk.com/blank.html&display=page&response_type=token">get new access token</a>';
-  echo '<br>';
-  echo 'And change your server file '. __FILE__ . ' according instructions';
+  echo ' - link redirects You to VK\'s android application, to return access_token for You';
+  echo '<hr>';
+  echo 'And change your server file "access_tokens.php" according instructions';
   exit();
 }
 
@@ -31,19 +32,9 @@ function HTTPPost($url, array $params)
 ?>
 <?php
 if (isset($_GET['my_videos'])) {
-  $getInfoGroupResponse = file_get_contents(
-    'https://api.vk.com/method/utils.resolveScreenName'.
-    '?screen_name=chertkov.alexandr'.
-//  '&count=1'.
-    '&access_token='.$access_token.
-    '&v=5.102'
-  );
-  $parsedInfo = json_decode($getInfoGroupResponse, true);
-
   header('Content-Type: application/json');
   echo file_get_contents('https://api.vk.com/method/video.get'.
-    '?owner_id='.(($parsedInfo['response']['type']==='user')?'':'-').$parsedInfo['response']['object_id'].
-    '&count=10'.
+    '?count=10'.
     '&access_token='.$access_token.
     '&v=5.102');
   exit();
@@ -77,7 +68,7 @@ if (isset($_POST['start_spam'])) {
     $parsedPostResponse = json_decode($postResponse, true);
     sleep(1);
   }
-  echo 'VK spam completed SUCCESSFULLY! <br> <a href="/spammer.php">Go back!</a> ';
+  echo 'VK spam completed SUCCESSFULLY! <br> <a href="/spammer.php?access_index='. $_GET['access_index'] .'">Go back!</a> ';
   exit;
 }
 ?>
@@ -111,8 +102,11 @@ if (isset($_POST['start_spam'])) {
   <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 </head>
 <body>
-
-<form method="post" action="/spammer.php">
+<?php echo $access_token ?>
+<a href="/">Go back!</a>
+<hr>
+<hr>
+<form method="post" action="/spammer.php?access_index<?php echo $_GET['access_index'] ?>">
   <input type="hidden" name="action" value="start_spam">
   <div>Groups: (fill through space just URL-domain, example:<strong>public83001541 public83001542</strong>)</div>
   <div>
@@ -131,8 +125,16 @@ if (isset($_POST['start_spam'])) {
   <div><button type="button" onclick="submitForm()">SPAM!</button></div>
 </form>
 <hr>
-Author: <a href="https://www.youtube.com/channel/UCXnbTnQDe3v6RR6LXAv6nBg">Hey, Alex!</a>
+<h3>Author:</h3>
+<div>
+  <script src="https://apis.google.com/js/platform.js"></script>
 
+  <div class="g-ytsubscribe" data-channelid="UCXnbTnQDe3v6RR6LXAv6nBg" data-layout="full" data-count="default"></div>
+</div>
+
+<script>
+  access_index = <?php echo $_GET['access_index'] ?>;
+</script>
 <script>
   function submitForm(element) {
     if (!$('[name="attachments"]').val()) {
@@ -151,7 +153,7 @@ Author: <a href="https://www.youtube.com/channel/UCXnbTnQDe3v6RR6LXAv6nBg">Hey, 
     $('#video-list').hide();
     $('button').hide();
     $.ajax( {
-      url: '/spammer.php',
+      url: '/spammer.php?access_index='+access_index,
       method: 'POST',
       data: {
         start_spam: 1,
@@ -167,28 +169,28 @@ Author: <a href="https://www.youtube.com/channel/UCXnbTnQDe3v6RR6LXAv6nBg">Hey, 
   }
   function chooseVideo(element) {
     $('[name="attachments"]').val(element.id);
-    localStorage.setItem('spamVideoAttachments', element.id);
+    localStorage.setItem('spamVideoAttachments' + access_index, element.id);
     $('.video-item').removeClass('selected');
     $('#' + element.id).addClass('selected');
   }
 
   $(document).ready(() => {
     $('[name="attachments"]')
-      .val(localStorage.getItem('spamVideoAttachments'));
+      .val(localStorage.getItem('spamVideoAttachments' + access_index));
     $('[name="message"]')
-      .val(localStorage.getItem('spamVideoText'))
+      .val(localStorage.getItem('spamVideoText' + access_index))
       .keyup(() => {
-        localStorage.setItem('spamVideoText', $('[name="message"]').val());
+        localStorage.setItem('spamVideoText' + access_index, $('[name="message"]').val());
       });
     $('[name="groups"]')
-      .val(localStorage.getItem('spamVideoGroups'))
+      .val(localStorage.getItem('spamVideoGroups' + access_index))
       .keyup(() => {
-        localStorage.setItem('spamVideoGroups', $('[name="groups"]').val());
+        localStorage.setItem('spamVideoGroups' + access_index, $('[name="groups"]').val());
       });
 
 
     $.ajax( {
-      url: '/spammer.php?my_videos=1',
+      url: '/spammer.php?my_videos=1&access_index='+access_index,
     }).done(function( data ) {
       data.response.items.forEach((item) => {
         const videoItem = $(`
